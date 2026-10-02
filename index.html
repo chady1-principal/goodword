@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘의 캘리그라피 명언 카드 - 마음을 전하는 글귀</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2canvas 라이브러리 CDN (고화질 카드 캡처 및 이미지 다운로드) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- 한국어 캘리그라피 및 전통 명조 구글 웹폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=East+Sea+Dokdo&family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Serif+KR:wght@300;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* 기본 글꼴 체계 */
+    .font-calli {
+      font-family: 'East Sea Dokdo', cursive;
+    }
+    .font-batang {
+      font-family: 'Gowun Batang', serif;
+    }
+    .font-myeongjo {
+      font-family: 'Nanum Myeongjo', serif;
+    }
+
+    /* 한지 질감 및 노이즈 그라디언트 배경 */
+    .hanji-texture-base {
+      background-color: #f7f3ec;
+      background-image: 
+        radial-gradient(#e4ded4 1px, transparent 1px),
+        radial-gradient(#ebd9c4 1px, #f7f3ec 1px);
+      background-size: 24px 24px, 48px 48px;
+      background-position: 0 0, 12px 12px;
+    }
+
+    /* 카드 테마별 스타일 */
+    .theme-hanji {
+      background-color: #FAF6EF;
+      border-color: #8c7b6c;
+      color: #2b2520;
+    }
+    .theme-sumuk {
+      background: linear-gradient(180deg, #1f242b 0%, #303742 60%, #15181d 100%);
+      border-color: #8c97a8;
+      color: #f2f3f5;
+    }
+    .theme-maehwa {
+      background: linear-gradient(135deg, #fdf4f4 0%, #fae8e8 50%, #f6dada 100%);
+      border-color: #c98888;
+      color: #432222;
+    }
+    .theme-daenamu {
+      background: linear-gradient(135deg, #f3f6f1 0%, #e5ede2 60%, #d8e5d3 100%);
+      border-color: #799173;
+      color: #1f331d;
+    }
+
+    /* 전통 낙관(도장) 스타일 */
+    .seal-stamp {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #b91c1c;
+      background-color: rgba(185, 28, 28, 0.08);
+      color: #b91c1c;
+      box-shadow: inset 0 0 3px rgba(185, 28, 28, 0.35);
+      border-radius: 4px;
+      line-height: 1;
+      user-select: none;
+    }
+
+    /* 텍스트 줄바꿈 및 서식 */
+    .calligraphy-text {
+      white-space: pre-line;
+      line-height: 1.45;
+      letter-spacing: 0.02em;
+      word-break: keep-all;
+    }
+
+    /* 부드러운 스크롤 */
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+<body class="hanji-texture-base text-stone-800 min-h-screen flex flex-col justify-between font-batang selection:bg-amber-200">
+
+  <!-- 상단 헤더 -->
+  <header class="w-full border-b border-stone-300/80 bg-white/70 backdrop-blur-md sticky top-0 z-30 shadow-sm">
+    <div class="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <span class="seal-stamp text-xs px-1.5 py-1 font-bold">心印</span>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-stone-900 font-myeongjo">오늘의 명언 캘리그라피</h1>
+          <p class="text-xs text-stone-500 hidden sm:block">전통 한지 위로 수놓는 마음에 닿는 글귀</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="quick-random-btn" class="text-xs sm:text-sm bg-stone-800 hover:bg-stone-900 text-stone-100 px-3.5 py-2 rounded-full transition-colors flex items-center shadow">
+          <svg class="w-3.5 h-3.5 mr-1.5 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          새 글귀 뽑기
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 작업 영역 -->
+  <main class="flex-grow max-w-4xl mx-auto w-full p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+    
+    <!-- 좌측/상단: 캘리그라피 카드 실시간 미리보기 영역 -->
+    <section class="w-full lg:w-7/12 flex flex-col items-center">
+      <div class="w-full flex items-center justify-between mb-2 px-1 text-xs text-stone-500 font-medium">
+        <span>미리보기 화면 (실제 저장되는 카드)</span>
+        <span id="card-dimension-badge" class="bg-stone-200/80 px-2 py-0.5 rounded text-[11px]">1:1 정사각 (카톡 최적화)</span>
+      </div>
+
+      <!-- 캡처 대상 카드 컨테이너 -->
+      <div class="w-full relative shadow-2xl rounded-2xl overflow-hidden transition-all duration-300 p-2 sm:p-4 bg-stone-200/40 backdrop-blur-sm">
+        <div id="card-capture-target" class="theme-hanji relative w-full aspect-square p-6 sm:p-9 flex flex-col justify-between rounded-xl border-2 transition-colors duration-500 overflow-hidden shadow-inner">
+          
+          <!-- 은은한 전통 배경 문양 오버레이 (SVG) -->
+          <div class="absolute inset-0 pointer-events-none opacity-10 flex items-center justify-center">
+            <svg class="w-4/5 h-4/5 stroke-current" fill="none" viewBox="0 0 200 200">
+              <circle cx="100" cy="100" r="75" stroke-width="1.5" stroke-dasharray="4 4" />
+              <circle cx="100" cy="100" r="60" stroke-width="0.75" />
+              <path d="M20,100 C60,70 140,130 180,100" stroke-width="1.5" />
+              <path d="M40,140 C80,110 120,150 160,130" stroke-width="1" />
+            </svg>
+          </div>
+
+          <!-- 한국 전통 장식 모서리 격자 프레임 -->
+          <div class="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-current opacity-40"></div>
+          <div class="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-current opacity-40"></div>
+          <div class="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-current opacity-40"></div>
+          <div class="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-current opacity-40"></div>
+
+          <!-- 카드 상단: 출처 or 받는 사람 & 작은 인장 -->
+          <div class="relative z-10 flex items-center justify-between">
+            <div id="card-recipient" class="text-xs sm:text-sm font-semibold tracking-wider opacity-85">
+              소중한 가족에게
+            </div>
+            <div id="card-seal" class="seal-stamp text-[10px] sm:text-xs font-bold px-1.5 py-0.5 tracking-tighter">
+              福
+            </div>
+          </div>
+
+          <!-- 카드 중앙: 메인 캘리그라피 문구 -->
+          <div class="relative z-10 my-auto text-center px-2 py-4">
+            <p id="card-content" class="calligraphy-text font-calli text-3xl sm:text-4xl md:text-5xl leading-tight transition-all">
+              꽃길만 걸으려 하지 말고,<br>걸어가는 길을 꽃길로 만들어라.
+            </p>
+          </div>
+
+          <!-- 카드 하단: 출처 / 보내는 사람 및 전통 낙관 -->
+          <div class="relative z-10 flex items-end justify-between pt-3 border-t border-current border-opacity-15">
+            <div>
+              <p id="card-source" class="text-xs sm:text-sm tracking-wide opacity-80 font-medium">
+                — 명심보감(明心寶鑑)
+              </p>
+              <p id="card-date" class="text-[10px] sm:text-xs opacity-60 mt-0.5">
+                오늘의 하루
+              </p>
+            </div>
+            <div class="flex items-center space-x-1.5">
+              <span id="card-sender" class="text-xs sm:text-sm opacity-90 font-medium">
+                마음을 담아
+              </span>
+              <div class="seal-stamp text-xs w-6 h-6 rounded-sm flex items-center justify-center font-bold">
+                印
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 카드 액션 버튼군 -->
+      <div class="w-full grid grid-cols-2 gap-2.5 mt-3 sm:mt-4">
+        <button id="download-btn" class="bg-amber-700 hover:bg-amber-800 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center space-x-2 shadow-md transition-all active:scale-[0.98]">
+          <svg class="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <span class="text-xs sm:text-sm font-semibold">이미지로 카드 저장</span>
+        </button>
+
+        <button id="copy-text-btn" class="bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 font-medium py-3 px-4 rounded-xl flex items-center justify-center space-x-2 shadow-sm transition-all active:scale-[0.98]">
+          <svg class="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path d="M8 4v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7.242a2 2 0 0 0-.602-1.43L16.083 2.57A2 2 0 0 0 14.685 2H10a2 2 0 0 0-2 2z"/><path d="M16 18v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2"/></svg>
+          <span class="text-xs sm:text-sm font-semibold">글귀 복사하기</span>
+        </button>
+      </div>
+
+      <!-- 피드백 메시지 박스 -->
+      <div id="toast-message" class="opacity-0 transition-opacity duration-300 mt-2 text-xs py-1 px-3 bg-stone-800 text-white rounded-full shadow pointer-events-none">
+        안내 문구
+      </div>
+    </section>
+
+    <!-- 우측/하단: 카드 꾸미기 및 텍스트 편집 컨트롤 패널 -->
+    <section class="w-full lg:w-5/12 bg-white/90 backdrop-blur-md p-5 sm:p-6 rounded-2xl border border-stone-300 shadow-lg flex flex-col gap-5">
+      
+      <!-- 모드 전환 탭 (추천 명언 뽑기 vs 직접 작성) -->
+      <div>
+        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">문구 선택 방식</label>
+        <div class="grid grid-cols-2 p-1 bg-stone-100 rounded-xl border border-stone-200">
+          <button id="tab-recommend" class="py-2 text-xs sm:text-sm font-medium rounded-lg transition-all bg-white text-stone-900 shadow-sm">
+            추천 명언 뽑기
+          </button>
+          <button id="tab-custom" class="py-2 text-xs sm:text-sm font-medium rounded-lg transition-all text-stone-600 hover:text-stone-900">
+            직접 작성하기
+          </button>
+        </div>
+      </div>
+
+      <!-- 1. 추천 명언 섹션 -->
+      <div id="section-recommend" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-semibold text-stone-700">고전 및 감성 명언 라이브러리</label>
+          <button id="random-reroll-btn" class="text-xs text-amber-800 hover:text-amber-900 font-bold flex items-center">
+            <svg class="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            다른 글귀 뽑기
+          </button>
+        </div>
+        <p class="text-xs text-stone-500 leading-relaxed">
+          동양 고전(명심보감, 논어, 채근담 등)과 가족 및 지인에게 따뜻함을 전하는 격려의 말 30가지 중에서 무작위로 선택됩니다.
+        </p>
+      </div>
+
+      <!-- 2. 직접 작성 폼 섹션 (초기에는 숨김 가능 혹은 동기화) -->
+      <div id="section-custom" class="space-y-3 hidden">
+        <div>
+          <label for="input-content" class="block text-xs font-semibold text-stone-700 mb-1">카드 본문 글귀 (줄바꿈 가능)</label>
+          <textarea id="input-content" rows="4" class="w-full text-sm p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-700 focus:outline-none bg-stone-50" placeholder="전하고 싶은 따뜻한 말을 적어보세요. (예: 사랑하는 우리 손주 지우야, 언제나 네 맑은 웃음을 응원한다.)"></textarea>
+        </div>
+      </div>
+
+      <!-- 공통 세부 정보 편집기 (받는 사람, 출처/태그, 보내는 사람) -->
+      <div class="grid grid-cols-2 gap-3 pt-2 border-t border-stone-200">
+        <div>
+          <label for="input-recipient" class="block text-[11px] font-semibold text-stone-600 mb-1">받는 분 / 상단 문구</label>
+          <input type="text" id="input-recipient" value="소중한 가족에게" class="w-full text-xs p-2.5 border border-stone-300 rounded-lg bg-stone-50 focus:outline-none focus:ring-1 focus:ring-amber-700">
+        </div>
+        <div>
+          <label for="input-source" class="block text-[11px] font-semibold text-stone-600 mb-1">출처 / 주제</label>
+          <input type="text" id="input-source" value="— 명심보감(明心寶鑑)" class="w-full text-xs p-2.5 border border-stone-300 rounded-lg bg-stone-50 focus:outline-none focus:ring-1 focus:ring-amber-700">
+        </div>
+        <div class="col-span-2">
+          <label for="input-sender" class="block text-[11px] font-semibold text-stone-600 mb-1">보내는 사람 / 맺음말</label>
+          <input type="text" id="input-sender" value="마음을 담아" class="w-full text-xs p-2.5 border border-stone-300 rounded-lg bg-stone-50 focus:outline-none focus:ring-1 focus:ring-amber-700">
+        </div>
+      </div>
+
+      <!-- 배경 테마 선택기 -->
+      <div class="pt-2 border-t border-stone-200">
+        <label class="block text-xs font-semibold text-stone-700 mb-2">한국적 한지 테마</label>
+        <div class="grid grid-cols-4 gap-2 text-center text-xs">
+          <!-- 은은한 한지 -->
+          <button data-theme="theme-hanji" class="theme-choice-btn active border-2 border-amber-800 rounded-xl p-2 bg-[#FAF6EF] shadow-sm flex flex-col items-center">
+            <span class="w-5 h-5 rounded-full bg-[#FAF6EF] border border-stone-400 mb-1"></span>
+            <span class="text-[11px] font-medium text-stone-800">전통한지</span>
+          </button>
+          <!-- 달밤 수묵 -->
+          <button data-theme="theme-sumuk" class="theme-choice-btn border border-stone-300 rounded-xl p-2 bg-[#1f242b] shadow-sm flex flex-col items-center text-stone-200">
+            <span class="w-5 h-5 rounded-full bg-[#1f242b] border border-stone-600 mb-1"></span>
+            <span class="text-[11px] font-medium">먹빛수묵</span>
+          </button>
+          <!-- 연분홍 매화 -->
+          <button data-theme="theme-maehwa" class="theme-choice-btn border border-stone-300 rounded-xl p-2 bg-[#fdf4f4] shadow-sm flex flex-col items-center">
+            <span class="w-5 h-5 rounded-full bg-[#fae8e8] border border-rose-300 mb-1"></span>
+            <span class="text-[11px] font-medium text-stone-800">봄빛매화</span>
+          </button>
+          <!-- 대나무 녹빛 -->
+          <button data-theme="theme-daenamu" class="theme-choice-btn border border-stone-300 rounded-xl p-2 bg-[#f3f6f1] shadow-sm flex flex-col items-center">
+            <span class="w-5 h-5 rounded-full bg-[#e5ede2] border border-emerald-300 mb-1"></span>
+            <span class="text-[11px] font-medium text-stone-800">청솔죽지</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 서체(폰트) 및 글자 크기 조절기 -->
+      <div class="pt-2 border-t border-stone-200 space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-2">붓글씨 및 서체 스타일</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button data-font="font-calli" class="font-choice-btn active border-2 border-amber-800 bg-amber-50/50 py-2 rounded-lg text-sm font-calli">
+              독도체 (붓글씨)
+            </button>
+            <button data-font="font-myeongjo" class="font-choice-btn border border-stone-300 py-2 rounded-lg text-xs font-myeongjo">
+              나눔명조 (단아함)
+            </button>
+            <button data-font="font-batang" class="font-choice-btn border border-stone-300 py-2 rounded-lg text-xs font-batang">
+              고운바탕 (온화함)
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label for="font-size-slider" class="text-xs font-semibold text-stone-700">글씨 크기</label>
+            <span id="font-size-val" class="text-[11px] text-stone-500">기본</span>
+          </div>
+          <input type="range" id="font-size-slider" min="26" max="52" value="38" class="w-full accent-amber-800 cursor-pointer">
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- 푸터 -->
+  <footer class="mt-8 py-5 border-t border-stone-300/60 text-center text-xs text-stone-500">
+    <p>소중한 사람에게 전하는 따뜻한 하루 한 줄 &copy; 마음을 전하는 캘리그라피 카드 생성기</p>
+  </footer>
+
+  <script>
+    // 1. 고전 및 따뜻한 격려 명언 데이터베이스 (30선)
+    const quotesList = [
+      {
+        content: "꽃길만 걸으려 하지 말고,\n걸어가는 길을 꽃길로 만들어라.",
+        source: "— 오늘의 다짐",
+        recipient: "사랑하는 가족에게",
+        seal: "福"
+      },
+      {
+        content: "지혜로운 사람은 당황하지 않고,\n어진 사람은 근심하지 않으며,\n용기 있는 사람은 두려워하지 않는다.",
+        source: "— 논어(論語)",
+        recipient: "소중한 그대에게",
+        seal: "智"
+      },
+      {
+        content: "바람이 불지 않으면\n노를 저어라.",
+        source: "— 격언(格言)",
+        recipient: "힘을 내는 이에게",
+        seal: "勇"
+      },
+      {
+        content: "마음이 맑으면 물이 맑고,\n마음이 고요하면 온 세상이 고요하다.",
+        source: "— 채근담(菜根譚)",
+        recipient: "평온을 바라는 분께",
+        seal: "靜"
+      },
+      {
+        content: "햇살처럼 눈부신 당신의 오늘,\n웃음으로 가득 채워지길 바랍니다.",
+        source: "— 아침의 축복",
+        recipient: "눈에 넣어도 아프지 않을 손주에게",
+        seal: "愛"
+      },
+      {
+        content: "나무는 꽃을 버려야 열매를 맺고,\n강물은 바다로 흘러가야 쉼을 얻는다.",
+        source: "— 화엄경(華嚴經)",
+        recipient: "새로운 시작 앞에",
+        seal: "德"
+      },
+      {
+        content: "작은 일도 정성을 다하여 행하면,\n반드시 밝은 빛이 드러나리라.",
+        source: "— 중용(中庸)",
+        recipient: "꿈을 향해 걷는 너에게",
+        seal: "誠"
+      },
+      {
+        content: "언제나 네 편이 되어줄게.\n조금 쉬어가도 괜찮단다.",
+        source: "— 따스한 위로",
+        recipient: "자랑스러운 우리 자녀에게",
+        seal: "心"
+      },
+      {
+        content: "참을 인(忍) 자 셋이면\n살인도 면한다.",
+        source: "— 명심보감(明心寶鑑)",
+        recipient: "지혜를 구하는 이에게",
+        seal: "忍"
+      },
+      {
+        content: "하루하루를 소중히 여기는 자에게\n세월은 보석처럼 빛나는 추억을 준다.",
+        source: "— 인생의 격언",
+        recipient: "동행하는 동반자에게",
+        seal: "壽"
+      },
+      {
+        content: "봄날의 따스한 햇살처럼,\n당신의 걸음마다 온기가 깃들기를.",
+        source: "— 계절의 안부",
+        recipient: "고마운 부모님께",
+        seal: "孝"
+      },
+      {
+        content: "군자는 말은 어눌하게 하고,\n행동에는 민첩하고자 한다.",
+        source: "— 논어(論語)",
+        recipient: "도리를 닦는 이에게",
+        seal: "仁"
+      },
+      {
+        content: "마음의 문을 활짝 열면\n모든 바람이 향기가 된다.",
+        source: "— 다산 정약용",
+        recipient: "벗에게 전하는 글",
+        seal: "和"
+      },
+      {
+        content: "오늘 당신이 마주하는 모든 순간이\n선물처럼 다정하길 바랍니다.",
+        source: "— 아침의 기원",
+        recipient: "사랑하는 가족에게",
+        seal: "喜"
+      },
+      {
+        content: "하늘은 스스로 돕는 자를 돕고,\n땅은 정성 들여 가꾼 씨앗을 품는다.",
+        source: "— 동양 잠언",
+        recipient: "노력하는 이에게",
+        seal: "信"
+      },
+      {
+        content: "물처럼 부드럽되\n바위를 뚫는 굳건함을 품어라.",
+        source: "— 도덕경(道德經)",
+        recipient: "소중한 인연에게",
+        seal: "柔"
+      },
+      {
+        content: "가장 아름다운 꽃은\n찬 서리를 이겨내고 핀 매화꽃이다.",
+        source: "— 옛 시조에서",
+        recipient: "역경을 딛고 선 그대에게",
+        seal: "忍"
+      },
+      {
+        content: "웃음은 집안의 보배요,\n화목은 만복을 부르는 문이다.",
+        source: "— 명심보감(明心寶鑑)",
+        recipient: "우리 집안 모두에게",
+        seal: "福"
+      },
+      {
+        content: "네가 밝게 웃어주는 것만으로도\n할아버지, 할머니는 세상 가장 행복하단다.",
+        source: "— 가족의 사랑",
+        recipient: "예쁜 손주에게",
+        seal: "愛"
+      },
+      {
+        content: "고요한 숲속 맑은 시내처럼\n마음속 깊은 평안을 누리소서.",
+        source: "— 평온의 기도",
+        recipient: "존경하는 은사님께",
+        seal: "安"
+      }
+    ];
+
+    // DOM 요소 캐싱
+    const cardTarget = document.getElementById('card-capture-target');
+    const cardContent = document.getElementById('card-content');
+    const cardRecipient = document.getElementById('card-recipient');
+    const cardSource = document.getElementById('card-source');
+    const cardSender = document.getElementById('card-sender');
+    const cardSeal = document.getElementById('card-seal');
+    const cardDate = document.getElementById('card-date');
+
+    const inputContent = document.getElementById('input-content');
+    const inputRecipient = document.getElementById('input-recipient');
+    const inputSource = document.getElementById('input-source');
+    const inputSender = document.getElementById('input-sender');
+
+    const tabRecommend = document.getElementById('tab-recommend');
+    const tabCustom = document.getElementById('tab-custom');
+    const sectionRecommend = document.getElementById('section-recommend');
+    const sectionCustom = document.getElementById('section-custom');
+
+    const quickRandomBtn = document.getElementById('quick-random-btn');
+    const randomRerollBtn = document.getElementById('random-reroll-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const copyTextBtn = document.getElementById('copy-text-btn');
+    const toastMessage = document.getElementById('toast-message');
+
+    const themeButtons = document.querySelectorAll('.theme-choice-btn');
+    const fontButtons = document.querySelectorAll('.font-choice-btn');
+    const fontSizeSlider = document.getElementById('font-size-slider');
+    const fontSizeVal = document.getElementById('font-size-val');
+
+    // 오늘 날짜 한글 표기 (예: 2025년 5월 12일)
+    function setFormattedDate() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      const day = today.getDate();
+      const days = ['일', '월', '화', '수', '목', '금', '토'];
+      const dayName = days[today.getDay()];
+      cardDate.textContent = `${year}년 ${month}월 ${day}일 (${dayName})`;
+    }
+
+    // 토스트 안내 메시지 표시
+    let toastTimeout;
+    function showToast(text) {
+      clearTimeout(toastTimeout);
+      toastMessage.textContent = text;
+      toastMessage.classList.remove('opacity-0');
+      toastMessage.classList.add('opacity-100');
+      toastTimeout = setTimeout(() => {
+        toastMessage.classList.remove('opacity-100');
+        toastMessage.classList.add('opacity-0');
+      }, 2500);
+    }
+
+    let lastIndex = -1;
+    function getRandomQuote() {
+      let nextIndex;
+      do {
+        nextIndex = Math.floor(Math.random() * quotesList.length);
+      } while (nextIndex === lastIndex && quotesList.length > 1);
+      lastIndex = nextIndex;
+      const quote = quotesList[nextIndex];
+
+      // 카드 내용 및 입력 폼 동기화
+      cardContent.textContent = quote.content;
+      cardSource.textContent = quote.source;
+      cardRecipient.textContent = quote.recipient;
+      cardSeal.textContent = quote.seal || '福';
+
+      inputContent.value = quote.content;
+      inputSource.value = quote.source;
+      inputRecipient.value = quote.recipient;
+
+      // 애니메이션 피드백
+      cardContent.classList.add('scale-95');
+      setTimeout(() => cardContent.classList.remove('scale-95'), 150);
+    }
+
+    // 탭 전환 핸들러
+    tabRecommend.addEventListener('click', () => {
+      tabRecommend.className = "py-2 text-xs sm:text-sm font-medium rounded-lg transition-all bg-white text-stone-900 shadow-sm";
+      tabCustom.className = "py-2 text-xs sm:text-sm font-medium rounded-lg transition-all text-stone-600 hover:text-stone-900";
+      sectionRecommend.classList.remove('hidden');
+      sectionCustom.classList.add('hidden');
+    });
+
+    tabCustom.addEventListener('click', () => {
+      tabCustom.className = "py-2 text-xs sm:text-sm font-medium rounded-lg transition-all bg-white text-stone-900 shadow-sm";
+      tabRecommend.className = "py-2 text-xs sm:text-sm font-medium rounded-lg transition-all text-stone-600 hover:text-stone-900";
+      sectionCustom.classList.remove('hidden');
+      sectionRecommend.classList.add('hidden');
+      inputContent.focus();
+    });
+
+    // 실시간 텍스트 반영
+    inputContent.addEventListener('input', (e) => {
+      cardContent.textContent = e.target.value || "전하고 싶은 따뜻한 말을\n적어보세요.";
+    });
+    inputRecipient.addEventListener('input', (e) => {
+      cardRecipient.textContent = e.target.value || "소중한 분께";
+    });
+    inputSource.addEventListener('input', (e) => {
+      cardSource.textContent = e.target.value || "— 마음의 글귀";
+    });
+    inputSender.addEventListener('input', (e) => {
+      cardSender.textContent = e.target.value || "마음을 담아";
+    });
+
+    // 랜덤 뽑기 버튼 바인딩
+    quickRandomBtn.addEventListener('click', () => {
+      getRandomQuote();
+      showToast("새로운 명언이 담겼습니다.");
+    });
+    randomRerollBtn.addEventListener('click', () => {
+      getRandomQuote();
+      showToast("새로운 명언이 담겼습니다.");
+    });
+
+    // 테마 전환
+    const themeClasses = ['theme-hanji', 'theme-sumuk', 'theme-maehwa', 'theme-daenamu'];
+    themeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        themeButtons.forEach(b => {
+          b.classList.remove('border-amber-800', 'border-2', 'active');
+          b.classList.add('border-stone-300');
+        });
+        btn.classList.remove('border-stone-300');
+        btn.classList.add('border-amber-800', 'border-2', 'active');
+
+        const selectedTheme = btn.dataset.theme;
+        themeClasses.forEach(c => cardTarget.classList.remove(c));
+        cardTarget.classList.add(selectedTheme);
+      });
+    });
+
+    // 서체 전환
+    const fontClasses = ['font-calli', 'font-myeongjo', 'font-batang'];
+    fontButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        fontButtons.forEach(b => {
+          b.classList.remove('border-amber-800', 'border-2', 'bg-amber-50/50');
+          b.classList.add('border-stone-300');
+        });
+        btn.classList.remove('border-stone-300');
+        btn.classList.add('border-amber-800', 'border-2', 'bg-amber-50/50');
+
+        const selectedFont = btn.dataset.font;
+        fontClasses.forEach(f => cardContent.classList.remove(f));
+        cardContent.classList.add(selectedFont);
+      });
+    });
+
+    // 글자 크기 슬라이더 조절
+    fontSizeSlider.addEventListener('input', (e) => {
+      const size = e.target.value;
+      cardContent.style.fontSize = `${size}px`;
+      fontSizeVal.textContent = `${size}px`;
+    });
+
+    // 글귀 클립보드 복사 기능
+    copyTextBtn.addEventListener('click', () => {
+      const fullText = `[오늘의 마음 글귀]\n\n"${cardContent.textContent}"\n\n${cardSource.textContent}\n- ${cardSender.textContent}`;
+      
+      // execCommand fallback 방식 (안전한 복사)
+      const tempTextArea = document.createElement('textarea');
+      tempTextArea.value = fullText;
+      tempTextArea.style.position = 'fixed';
+      tempTextArea.style.left = '-9999px';
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showToast('글귀가 클립보드에 복사되었습니다! 카톡에 붙여넣으세요.');
+        } else {
+          showToast('복사에 실패했습니다. 수동으로 복사해주세요.');
+        }
+      } catch (err) {
+        showToast('복사 중 오류가 발생했습니다.');
+      } finally {
+        document.body.removeChild(tempTextArea);
+      }
+    });
+
+    // html2canvas 기반 고화질 카드 이미지 저장 기능
+    downloadBtn.addEventListener('click', async () => {
+      const originalText = downloadBtn.innerHTML;
+      downloadBtn.disabled = true;
+      downloadBtn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>카드 굽는 중...</span>
+      `;
+
+      try {
+        // 고해상도 렌더링을 위해 scale: 2.5 적용 (선명한 붓글씨 유지)
+        const canvas = await html2canvas(cardTarget, {
+          scale: 2.5,
+          useCORS: true,
+          logging: false,
+          backgroundColor: null
+        });
+
+        const imageUri = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().slice(0, 10);
+        link.download = `오늘의_명언_캘리그라피_${timestamp}.png`;
+        link.href = imageUri;
+        link.click();
+        
+        showToast('이미지가 성공적으로 저장되었습니다!');
+      } catch (error) {
+        console.error('이미지 저장 오류:', error);
+        showToast('이미지 저장 중 오류가 발생했습니다.');
+      } finally {
+        downloadBtn.disabled = false;
+        downloadBtn.innerHTML = originalText;
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setFormattedDate();
+      // 초기 기본 문구 세팅
+      getRandomQuote();
+    });
+  </script>
+</body>
+</html>
